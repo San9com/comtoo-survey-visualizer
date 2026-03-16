@@ -44,11 +44,7 @@ export function CsvUploader({
       />
 
       <div className="flex items-center gap-2">
-        <Button
-          variant="subtle"
-          onClick={() => inputRef.current?.click()}
-          disabled={busy}
-        >
+        <Button onClick={() => inputRef.current?.click()} disabled={busy}>
           {busy ? "Reading…" : "Upload CSV"}
         </Button>
         {!compact ? (

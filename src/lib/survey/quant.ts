@@ -6,7 +6,7 @@ export type QuantDatum = {
   pct: number; // 0..100 based on responses count
 };
 
-export type QuantVisualKind = "pie" | "bar" | "pareto";
+export type QuantVisualKind = "pie" | "bar";
 
 function normalizeAnswer(v: string) {
   return (v ?? "").trim();
@@ -51,13 +51,32 @@ export function computeQuant(question: Question, rows: Record<string, string>[])
   const counts = new Map<string, number>();
 
   if (question.type === "multiple_choice") {
+    // Some exports include an extra "combined answers" column without optionLabel.
+    // When option columns are present, only count those to avoid noisy duplicate labels.
+    const hasExplicitOptions = question.columns.some((c) => Boolean(c.optionLabel));
+    const effectiveColumns = hasExplicitOptions
+      ? question.columns.filter((c) => Boolean(c.optionLabel))
+      : question.columns;
+
     // Each option column counts independently. A selection is any non-empty cell.
     for (const row of rows) {
-      for (const col of question.columns) {
+      for (const col of effectiveColumns) {
         const raw = normalizeAnswer(row[col.key] ?? "");
         if (!raw) continue;
-        const optionLabel = col.optionLabel ?? raw;
-        counts.set(optionLabel, (counts.get(optionLabel) ?? 0) + 1);
+        if (col.optionLabel) {
+          counts.set(col.optionLabel, (counts.get(col.optionLabel) ?? 0) + 1);
+          continue;
+        }
+
+        // Fallback for malformed exports where list-like answers appear in one column.
+        if (/[,;]/.test(raw)) {
+          for (const part of new Set(splitMulti(raw))) {
+            counts.set(part, (counts.get(part) ?? 0) + 1);
+          }
+          continue;
+        }
+
+        counts.set(raw, (counts.get(raw) ?? 0) + 1);
       }
     }
   } else {
@@ -70,8 +89,9 @@ export function computeQuant(question: Question, rows: Record<string, string>[])
     for (const row of rows) {
       const raw = normalizeAnswer(row[key] ?? "");
       if (!raw) continue;
-      if (treatAsMulti && question.type !== "rating") {
-        for (const part of splitMulti(raw)) {
+      const shouldSplit = question.type !== "rating" && (treatAsMulti || /[,;]/.test(raw));
+      if (shouldSplit) {
+        for (const part of new Set(splitMulti(raw))) {
           counts.set(part, (counts.get(part) ?? 0) + 1);
         }
       } else {
@@ -97,11 +117,9 @@ export function pickQuantVisual(data: QuantDatum[]): QuantVisualKind {
 
   const optionCount = data.length;
   const top1 = data[0]?.pct ?? 0;
-  const top3 = data.slice(0, 3).reduce((s, d) => s + d.pct, 0);
 
   // Pie is only useful when there are few, reasonably balanced options.
-  if (optionCount <= 6 && top1 <= 72 && top3 <= 95) return "pie";
-  if (optionCount <= 14) return "bar";
-  return "pareto";
+  if (optionCount <= 5 && top1 <= 72) return "pie";
+  return "bar";
 }
 

@@ -1,9 +1,7 @@
 import type { Question } from "@/lib/types";
 import { computeQuant, pickQuantVisual } from "@/lib/survey/quant";
 import { QuantBarChart } from "@/components/quant/QuantBarChart";
-import { QuantPareto } from "@/components/quant/QuantPareto";
 import { QuantPieChart } from "@/components/quant/QuantPieChart";
-import { QuantOptionCloud } from "@/components/quant/QuantOptionCloud";
 
 function formatPct(p: number) {
   return `${p.toFixed(p >= 10 ? 0 : 1)}%`;
@@ -22,12 +20,24 @@ export function QuantResultsPanel({
   if (!result) return null;
 
   const tr = translateLabel ?? ((s: string) => s);
-  const top = result.data.slice(0, 12);
-  const chartData = result.data.map((d) => ({ ...d, label: tr(d.label) }));
+  const fullData = result.data.map((d) => ({ ...d, label: tr(d.label) }));
+  const top = fullData.slice(0, 12);
   const topData = top.map((d) => ({ ...d, label: tr(d.label) }));
-  const visual = pickQuantVisual(result.data);
-  const manyOptions = visual === "pareto";
-  const top3Share = result.data.slice(0, 3).reduce((s, d) => s + d.pct, 0);
+  const top3Share = fullData.slice(0, 3).reduce((s, d) => s + d.pct, 0);
+
+  const maxBars = 14;
+  const chartData =
+    fullData.length > maxBars
+      ? [
+          ...fullData.slice(0, maxBars),
+          {
+            label: "Overig",
+            count: fullData.slice(maxBars).reduce((s, d) => s + d.count, 0),
+            pct: fullData.slice(maxBars).reduce((s, d) => s + d.pct, 0),
+          },
+        ]
+      : fullData;
+  const visual = pickQuantVisual(chartData);
 
   return (
     <div className="space-y-4">
@@ -40,20 +50,13 @@ export function QuantResultsPanel({
           <div className="mt-3">
             {visual === "pie" ? (
               <QuantPieChart data={chartData} />
-            ) : visual === "bar" ? (
-              <QuantBarChart data={chartData} />
             ) : (
-              <QuantPareto data={chartData} topN={10} />
+              <QuantBarChart data={chartData} />
             )}
           </div>
-          {result.data.length > 30 ? (
+          {fullData.length > maxBars ? (
             <div className="mt-2 text-[12.5px] text-[var(--muted)]">
-              We tonen de top 30 opties voor leesbaarheid.
-            </div>
-          ) : null}
-          {manyOptions ? (
-            <div className="mt-2 text-[12.5px] text-[var(--muted)]">
-              Deze vraag heeft een lange staart: we tonen top 10 + "Overig" in Pareto.
+              We tonen top {maxBars} + "Overig" voor leesbaarheid.
             </div>
           ) : null}
           <div className="mt-2 text-[12.5px] text-[var(--muted)]">
@@ -61,9 +64,7 @@ export function QuantResultsPanel({
           </div>
         </div>
 
-        <div className="space-y-3">
-          {manyOptions ? <QuantOptionCloud data={chartData} maxItems={36} /> : null}
-          <div className="rounded-[var(--radius-sm)] border border-[var(--border)] bg-white p-4">
+        <div className="rounded-[var(--radius-sm)] border border-[var(--border)] bg-white p-4">
           <div className="text-[12px] font-semibold tracking-[0.12em] text-[var(--faint)]">
             SAMENVATTING
           </div>
@@ -88,7 +89,6 @@ export function QuantResultsPanel({
               </div>
             ) : null}
           </div>
-        </div>
         </div>
       </div>
     </div>
