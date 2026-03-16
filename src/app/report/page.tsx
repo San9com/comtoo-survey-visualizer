@@ -40,7 +40,7 @@ export default function ReportPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="subtle" onClick={() => window.print()}>
+            <Button onClick={() => window.print()}>
               Print / Save PDF
             </Button>
           </div>

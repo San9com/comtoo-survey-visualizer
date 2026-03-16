@@ -17,7 +17,6 @@ export function ExportPanel({ project }: { project: SurveyProject }) {
         </div>
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <Button
-            variant="subtle"
             onClick={() => {
               const md = exportProjectMarkdown(project);
               const safeName = (project.name || "survey")
@@ -46,7 +45,6 @@ export function ExportPanel({ project }: { project: SurveyProject }) {
         </div>
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <Button
-            variant="subtle"
             onClick={() => {
               downloadText(
                 "comtoo-survey-project.json",
