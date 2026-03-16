@@ -1,7 +1,9 @@
 import type { Question } from "@/lib/types";
-import { computeQuant } from "@/lib/survey/quant";
+import { computeQuant, pickQuantVisual } from "@/lib/survey/quant";
 import { QuantBarChart } from "@/components/quant/QuantBarChart";
 import { QuantPareto } from "@/components/quant/QuantPareto";
+import { QuantPieChart } from "@/components/quant/QuantPieChart";
+import { QuantOptionCloud } from "@/components/quant/QuantOptionCloud";
 
 function formatPct(p: number) {
   return `${p.toFixed(p >= 10 ? 0 : 1)}%`;
@@ -23,7 +25,9 @@ export function QuantResultsPanel({
   const top = result.data.slice(0, 12);
   const chartData = result.data.map((d) => ({ ...d, label: tr(d.label) }));
   const topData = top.map((d) => ({ ...d, label: tr(d.label) }));
-  const manyOptions = result.data.length > 14;
+  const visual = pickQuantVisual(result.data);
+  const manyOptions = visual === "pareto";
+  const top3Share = result.data.slice(0, 3).reduce((s, d) => s + d.pct, 0);
 
   return (
     <div className="space-y-4">
@@ -34,10 +38,12 @@ export function QuantResultsPanel({
             Percentages zijn berekend per reactie (n={result.responseCount}).
           </div>
           <div className="mt-3">
-            {manyOptions ? (
-              <QuantPareto data={chartData} topN={10} />
-            ) : (
+            {visual === "pie" ? (
+              <QuantPieChart data={chartData} />
+            ) : visual === "bar" ? (
               <QuantBarChart data={chartData} />
+            ) : (
+              <QuantPareto data={chartData} topN={10} />
             )}
           </div>
           {result.data.length > 30 ? (
@@ -47,12 +53,17 @@ export function QuantResultsPanel({
           ) : null}
           {manyOptions ? (
             <div className="mt-2 text-[12.5px] text-[var(--muted)]">
-              Tip: bij veel opties vatten we samen als top 10 + “Overig” (Pareto).
+              Deze vraag heeft een lange staart: we tonen top 10 + "Overig" in Pareto.
             </div>
           ) : null}
+          <div className="mt-2 text-[12.5px] text-[var(--muted)]">
+            Top 3 opties vertegenwoordigen {formatPct(top3Share)} van alle reacties.
+          </div>
         </div>
 
-        <div className="rounded-[var(--radius-sm)] border border-[var(--border)] bg-white p-4">
+        <div className="space-y-3">
+          {manyOptions ? <QuantOptionCloud data={chartData} maxItems={36} /> : null}
+          <div className="rounded-[var(--radius-sm)] border border-[var(--border)] bg-white p-4">
           <div className="text-[12px] font-semibold tracking-[0.12em] text-[var(--faint)]">
             SAMENVATTING
           </div>
@@ -77,6 +88,7 @@ export function QuantResultsPanel({
               </div>
             ) : null}
           </div>
+        </div>
         </div>
       </div>
     </div>

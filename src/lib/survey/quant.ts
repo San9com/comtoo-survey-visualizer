@@ -6,6 +6,8 @@ export type QuantDatum = {
   pct: number; // 0..100 based on responses count
 };
 
+export type QuantVisualKind = "pie" | "bar" | "pareto";
+
 function normalizeAnswer(v: string) {
   return (v ?? "").trim();
 }
@@ -88,5 +90,18 @@ export function computeQuant(question: Question, rows: Record<string, string>[])
     .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label, "nl"));
 
   return { responseCount, data };
+}
+
+export function pickQuantVisual(data: QuantDatum[]): QuantVisualKind {
+  if (data.length <= 1) return "bar";
+
+  const optionCount = data.length;
+  const top1 = data[0]?.pct ?? 0;
+  const top3 = data.slice(0, 3).reduce((s, d) => s + d.pct, 0);
+
+  // Pie is only useful when there are few, reasonably balanced options.
+  if (optionCount <= 6 && top1 <= 72 && top3 <= 95) return "pie";
+  if (optionCount <= 14) return "bar";
+  return "pareto";
 }
 

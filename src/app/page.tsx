@@ -8,10 +8,12 @@ import { CsvUploader } from "@/components/csv/CsvUploader";
 import { ParseSettingsPanel } from "@/components/csv/ParseSettingsPanel";
 import { CsvPreviewTable } from "@/components/csv/CsvPreviewTable";
 import { QuestionSidebar } from "@/components/survey/QuestionSidebar";
+import { TextWordCloud } from "@/components/survey/TextWordCloud";
 import { QuantResultsPanel } from "@/components/quant/QuantResultsPanel";
 import { ExportPanel } from "@/components/export/ExportPanel";
 import { useProject } from "@/lib/project/projectStore";
 import { SidebarNav } from "@/components/SidebarNav";
+import { extractTopTokens } from "@/lib/survey/textInsights";
 
 export default function Home() {
   const {
@@ -208,24 +210,33 @@ export default function Home() {
                         <summary className="cursor-pointer text-[13px] font-medium">
                           Antwoorden
                         </summary>
-                        <div className="mt-3 space-y-2">
-                          {(() => {
-                            const key = selected.columns[0]?.key;
-                            const responses = key
-                              ? project.rows
-                                  .map((r) => (r[key] ?? "").trim())
-                                  .filter(Boolean)
-                              : [];
-                            return responses.slice(0, 80).map((t, i) => (
-                              <div
-                                key={i}
-                                className="rounded-[12px] bg-white p-3 text-[14px] leading-7"
-                              >
-                                {t}
+                        {(() => {
+                          const key = selected.columns[0]?.key;
+                          const responses = key
+                            ? project.rows
+                                .map((r) => (r[key] ?? "").trim())
+                                .filter(Boolean)
+                            : [];
+                          const topTokens = extractTopTokens(responses, {
+                            maxItems: 28,
+                            minCount: 2,
+                          });
+                          return (
+                            <div className="mt-3 space-y-3">
+                              <TextWordCloud tokens={topTokens} />
+                              <div className="space-y-2">
+                                {responses.slice(0, 80).map((t, i) => (
+                                  <div
+                                    key={i}
+                                    className="rounded-[12px] bg-white p-3 text-[14px] leading-7"
+                                  >
+                                    {t}
+                                  </div>
+                                ))}
                               </div>
-                            ));
-                          })()}
-                        </div>
+                            </div>
+                          );
+                        })()}
                       </details>
                     )}
                   </div>
