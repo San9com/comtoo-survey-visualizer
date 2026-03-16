@@ -1,26 +1,67 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* COMTOO-inspired, calm + editorial (light-first) */
+  --bg: #fbfcfe;
+  --panel: #ffffff;
+  --text: #0f172a; /* slate-900-ish */
+  --muted: #475569; /* slate-600-ish */
+  --faint: #94a3b8; /* slate-400-ish */
+  --border: rgba(15, 23, 42, 0.08);
+  --accent: #7cc7ff; /* airy COMTOO blue */
+  --accent-ink: #0b4a6f;
+  --ring: rgba(124, 199, 255, 0.35);
+  --shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 10px 24px rgba(15, 23, 42, 0.04);
+  --shadow-soft: 0 1px 1px rgba(15, 23, 42, 0.04);
+
+  --radius: 12px;
+  --radius-sm: 10px;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-background: var(--bg);
+  --color-foreground: var(--text);
+  --font-sans: "Catamaran", ui-sans-serif, system-ui, -apple-system, Segoe UI,
+    Roboto, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+@font-face {
+  font-family: "Catamaran";
+  src: url("/fonts/Catamaran-VariableFont_wght.ttf") format("truetype");
+  font-style: normal;
+  font-display: swap;
+}
+
+html {
+  /* Catamaran can look “inky” at heavier weights; keep typography calmer. */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-synthesis-weight: none;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-weight: 400;
+  text-rendering: geometricPrecision;
+}
+
+/* Selection and focus states should feel gentle (research, not dashboard). */
+::selection {
+  background: rgba(124, 199, 255, 0.35);
+}
+
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/* Print-friendly defaults (the report view adds more). */
+@media print {
+  body {
+    background: white;
+  }
 }
