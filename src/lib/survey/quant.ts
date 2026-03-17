@@ -46,9 +46,11 @@ function isClosedType(t: QuestionType) {
 export function computeQuant(question: Question, rows: Record<string, string>[]) {
   if (!isClosedType(question.type)) return null;
   const responseCount = rows.length;
-  if (responseCount === 0) return { responseCount, data: [] as QuantDatum[] };
+  if (responseCount === 0)
+    return { responseCount, answeredCount: 0, data: [] as QuantDatum[] };
 
   const counts = new Map<string, number>();
+  let answeredCount = 0;
 
   if (question.type === "multiple_choice") {
     // Some exports include an extra "combined answers" column without optionLabel.
@@ -64,10 +66,12 @@ export function computeQuant(question: Question, rows: Record<string, string>[])
     // If a row has no explicit option selected, fall back to parsing combined-answer cells.
     for (const row of rows) {
       let rowHadExplicitSelection = false;
+      let rowHadAnySelection = false;
 
       for (const col of effectiveColumns) {
         const raw = normalizeAnswer(row[col.key] ?? "");
         if (!raw) continue;
+        rowHadAnySelection = true;
         if (col.optionLabel) {
           counts.set(col.optionLabel, (counts.get(col.optionLabel) ?? 0) + 1);
           rowHadExplicitSelection = true;
@@ -89,16 +93,19 @@ export function computeQuant(question: Question, rows: Record<string, string>[])
         for (const col of fallbackColumns) {
           const raw = normalizeAnswer(row[col.key] ?? "");
           if (!raw) continue;
+          rowHadAnySelection = true;
           const values = /[,;]/.test(raw) ? splitMulti(raw) : [raw];
           for (const part of new Set(values)) {
             counts.set(part, (counts.get(part) ?? 0) + 1);
           }
         }
       }
+
+      if (rowHadAnySelection) answeredCount += 1;
     }
   } else {
     const key = question.columns[0]?.key;
-    if (!key) return { responseCount, data: [] as QuantDatum[] };
+    if (!key) return { responseCount, answeredCount: 0, data: [] as QuantDatum[] };
 
     const rawValues = rows.map((r) => normalizeAnswer(r[key] ?? "")).filter(Boolean);
     const treatAsMulti = shouldTreatAsMultiSelect(rawValues);
@@ -106,7 +113,12 @@ export function computeQuant(question: Question, rows: Record<string, string>[])
     for (const row of rows) {
       const raw = normalizeAnswer(row[key] ?? "");
       if (!raw) continue;
-      const shouldSplit = question.type !== "rating" && (treatAsMulti || /[,;]/.test(raw));
+      answeredCount += 1;
+      // Only split for true multi-select exports.
+      // Commas are common in normal sentences (e.g. role descriptions) and must NOT be split
+      // unless we've detected multi-select behavior across the column.
+      const hasSemicolon = /;/.test(raw);
+      const shouldSplit = question.type !== "rating" && (treatAsMulti || hasSemicolon);
       if (shouldSplit) {
         for (const part of new Set(splitMulti(raw))) {
           counts.set(part, (counts.get(part) ?? 0) + 1);
@@ -126,7 +138,7 @@ export function computeQuant(question: Question, rows: Record<string, string>[])
     }))
     .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label, "nl"));
 
-  return { responseCount, data };
+  return { responseCount, answeredCount, data };
 }
 
 export function pickQuantVisual(data: QuantDatum[]): QuantVisualKind {

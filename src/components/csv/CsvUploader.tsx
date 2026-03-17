@@ -45,11 +45,11 @@ export function CsvUploader({
 
       <div className="flex items-center gap-2">
         <Button onClick={() => inputRef.current?.click()} disabled={busy}>
-          {busy ? "Reading…" : "Upload CSV"}
+          {busy ? "Bezig…" : "Upload CSV"}
         </Button>
-        {!compact ? (
+        {!compact && hint ? (
           <div className="text-[12.5px] text-[var(--muted)]">
-            {hint ?? "Supports semicolon-separated exports (common in NL)."}
+            {hint}
           </div>
         ) : null}
       </div>

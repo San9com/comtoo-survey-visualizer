@@ -8,12 +8,10 @@ import { CsvUploader } from "@/components/csv/CsvUploader";
 import { ParseSettingsPanel } from "@/components/csv/ParseSettingsPanel";
 import { CsvPreviewTable } from "@/components/csv/CsvPreviewTable";
 import { QuestionSidebar } from "@/components/survey/QuestionSidebar";
-import { TextWordCloud } from "@/components/survey/TextWordCloud";
 import { QuantResultsPanel } from "@/components/quant/QuantResultsPanel";
 import { ExportPanel } from "@/components/export/ExportPanel";
 import { useProject } from "@/lib/project/projectStore";
 import { SidebarNav } from "@/components/SidebarNav";
-import { extractTopTokens } from "@/lib/survey/textInsights";
 
 export default function Home() {
   const {
@@ -44,11 +42,11 @@ export default function Home() {
 
           <div className="mt-7 border-t border-black/[0.06] pt-6">
             <div className="mb-3 flex items-center justify-between">
-              <div className="text-[12px] font-semibold tracking-[0.12em] text-[var(--faint)]">
+              <div className="text-[12px] font-semibold tracking-[0.12em] text-[var(--text)]">
                 QUESTIONS
               </div>
               {project.rows.length ? (
-                <div className="text-[12px] text-[var(--faint)]">
+                <div className="text-[12px] text-[var(--text)]">
                   {project.questions.length}
                 </div>
               ) : null}
@@ -60,7 +58,7 @@ export default function Home() {
                   Upload een survey CSV in het hoofdvenster om te beginnen.
                 </div>
               ) : (
-                <div className="max-h-[calc(100vh-340px)] overflow-auto pr-1">
+                <div className="max-h-[calc(100vh-420px)] overflow-auto pr-1">
                   <QuestionSidebar
                     questions={project.questions}
                     selectedId={project.selectedQuestionId}
@@ -80,9 +78,6 @@ export default function Home() {
           <div className="min-w-0">
             <div className="text-[26px] font-medium tracking-tight">
               {project.rawCsvName ? project.name : "Survey werkruimte"}
-            </div>
-            <div className="mt-1 text-[13.5px] text-[var(--muted)]">
-              Grafieken voor gesloten vragen. Open antwoorden als lijst.
             </div>
 
             {project.rawCsvName ? (
@@ -124,13 +119,8 @@ export default function Home() {
               Start met een survey-export
             </h1>
             <p className="text-[15px] leading-7 text-[var(--muted)]">
-              Deze tool werkt volledig lokaal in je browser. Upload een CSV-export
-              van je COMTOO UX survey en we parsen die (ondersteunt puntkomma’s).
+              Upload een CSV-export van je COMTOO UX survey — alles blijft lokaal in je browser.
             </p>
-            <div className="rounded-[12px] bg-[var(--bg)] p-4 text-[13px] text-[var(--muted)]">
-              Tip: als de preview er vreemd uitziet (bijv. één grote kolom), ga
-              naar Instellingen en pas het scheidingsteken aan.
-            </div>
             <div className="pt-2">
               <CsvUploader
                 config={project.parseConfig}
@@ -172,9 +162,7 @@ export default function Home() {
                     {tr(selected.label)}
                   </div>
                   <div className="mt-1 text-[13.5px] text-[var(--muted)]">
-                    {selected.type === "open_text"
-                      ? "Open antwoorden."
-                      : "Verdeling (aantallen + percentages)."}
+                    {selected.type === "open_text" ? "Open antwoorden." : "Gesloten vraag."}
                   </div>
                   {parseErrors.length ? (
                     <div className="mt-4 rounded-[12px] bg-amber-50 px-4 py-3 text-[13px] text-amber-900">
@@ -187,7 +175,41 @@ export default function Home() {
                     </div>
                   ) : null}
                   <div className="mt-6">
-                    {selected.type !== "open_text" ? (
+                    {selected.type === "open_text" ? (
+                      (() => {
+                        const key = selected.columns[0]?.key;
+                        const responses = key
+                          ? project.rows.map((r) => (r[key] ?? "").trim()).filter(Boolean)
+                          : [];
+                        const maxShown = 200;
+                        return (
+                          <div className="space-y-3">
+                            <div className="text-[12.5px] text-[var(--muted)]">
+                              {responses.length} antwoorden
+                              {responses.length > maxShown
+                                ? ` (we tonen de eerste ${maxShown})`
+                                : ""}
+                              .
+                            </div>
+                            <div className="space-y-2">
+                              {responses.slice(0, maxShown).map((t, i) => (
+                                <div
+                                  key={i}
+                                  className="rounded-[12px] bg-[var(--bg)] p-3 text-[14px] leading-7"
+                                >
+                                  {t}
+                                </div>
+                              ))}
+                              {!responses.length ? (
+                                <div className="text-[13px] text-[var(--muted)]">
+                                  Geen open antwoorden gevonden voor deze vraag.
+                                </div>
+                              ) : null}
+                            </div>
+                          </div>
+                        );
+                      })()
+                    ) : (
                       <QuantResultsPanel
                         question={{
                           ...selected,
@@ -196,39 +218,6 @@ export default function Home() {
                         rows={project.rows}
                         translateLabel={tr}
                       />
-                    ) : (
-                      <details className="rounded-[14px] bg-[var(--bg)] p-4">
-                        <summary className="cursor-pointer text-[13px] font-medium">
-                          Antwoorden
-                        </summary>
-                        {(() => {
-                          const key = selected.columns[0]?.key;
-                          const responses = key
-                            ? project.rows
-                                .map((r) => (r[key] ?? "").trim())
-                                .filter(Boolean)
-                            : [];
-                          const topTokens = extractTopTokens(responses, {
-                            maxItems: 28,
-                            minCount: 2,
-                          });
-                          return (
-                            <div className="mt-3 space-y-3">
-                              <TextWordCloud tokens={topTokens} />
-                              <div className="space-y-2">
-                                {responses.slice(0, 80).map((t, i) => (
-                                  <div
-                                    key={i}
-                                    className="rounded-[12px] bg-white p-3 text-[14px] leading-7"
-                                  >
-                                    {t}
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          );
-                        })()}
-                      </details>
                     )}
                   </div>
                 </>

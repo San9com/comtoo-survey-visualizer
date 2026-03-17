@@ -66,6 +66,15 @@ function guessTypeFromValues(values: string[], isGroupedCheckbox: boolean): Ques
   // Open text: lots of unique answers and/or long strings.
   const avgLen =
     nonEmpty.reduce((s, v) => s + v.length, 0) / Math.max(1, nonEmpty.length);
+  // Some "open" questions in practice behave like closed questions:
+  // long-ish, but chosen from a small fixed set of phrases.
+  // Keep this conservative so genuine open questions don't get forced into charts.
+  if (uniqueCount <= 10 && total >= 8 && uniqueRatio <= 0.45 && avgLen <= 140) {
+    return "single_choice";
+  }
+
+  // Short answers can still be open-ended if they vary a lot.
+  if (uniqueCount >= 12 && uniqueRatio >= 0.5) return "open_text";
   if (avgLen >= 40) return "open_text";
   if (uniqueRatio >= 0.6 && uniqueCount >= 12) return "open_text";
 

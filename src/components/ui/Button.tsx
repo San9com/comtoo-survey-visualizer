@@ -27,11 +27,11 @@ export function Button({
 
   const variants: Record<ButtonVariant, string> = {
     primary:
-      "bg-[var(--brand-red)] text-white border-transparent hover:bg-[var(--brand-red-strong)]",
+      "bg-[var(--brand-red)] text-white border-transparent hover:bg-[var(--brand-red-strong)] shadow-[0_1px_0_rgba(255,255,255,0.25)_inset,0_10px_20px_rgba(15,23,42,0.06)]",
     ghost:
       "bg-transparent text-[var(--text)] border-transparent hover:bg-black/[0.04]",
     subtle:
-      "bg-white text-[var(--text)] border-[var(--border)] hover:bg-black/[0.02] shadow-[0_1px_0_rgba(15,23,42,0.03)]",
+      "bg-[var(--panel)] text-[var(--text)] border-black/[0.06] hover:bg-black/[0.02] shadow-[0_1px_0_rgba(15,23,42,0.03)]",
     danger:
       "bg-white text-red-700 border-red-200 hover:bg-red-50 hover:border-red-300",
   };

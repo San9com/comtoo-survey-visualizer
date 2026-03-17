@@ -11,7 +11,9 @@ export function BrandMark() {
         priority
         className="h-[34px] w-auto"
       />
-      <div className="text-[12.5px] text-[var(--muted)]">Survey Visualiser</div>
+      <div className="text-[15px] font-semibold tracking-tight text-[var(--text)]">
+        Survey Visualiser
+      </div>
     </div>
   );
 }

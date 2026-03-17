@@ -13,11 +13,6 @@ export function QuantPieChart({ data }: { data: QuantDatum[] }) {
     color: palette[idx % palette.length],
   }));
 
-  function short(label: string, max = 44) {
-    if (label.length <= max) return label;
-    return `${label.slice(0, max - 1).trimEnd()}...`;
-  }
-
   return (
     <div className="space-y-3">
       <div className="h-[320px] w-full">
@@ -64,22 +59,6 @@ export function QuantPieChart({ data }: { data: QuantDatum[] }) {
           />
           </PieChart>
         </ResponsiveContainer>
-      </div>
-      <div className="grid gap-2 sm:grid-cols-2">
-        {withColor.map((item) => (
-          <div
-            key={`legend-${item.label}`}
-            className="flex items-center gap-2 rounded-[10px] border border-[var(--border)] bg-white px-2.5 py-1.5 text-[12.5px]"
-            title={item.label}
-          >
-            <span
-              className="inline-block h-2.5 w-2.5 rounded-full"
-              style={{ backgroundColor: item.color }}
-            />
-            <span className="min-w-0 flex-1 truncate">{short(item.label)}</span>
-            <span className="shrink-0 text-[var(--muted)]">{formatPct(item.pct)}</span>
-          </div>
-        ))}
       </div>
     </div>
   );
