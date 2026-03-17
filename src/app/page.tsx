@@ -25,6 +25,27 @@ export default function Home() {
   const [view, setView] = React.useState<"work" | "export" | "settings">("work");
   const selected = project.questions.find((q) => q.id === project.selectedQuestionId);
   const tr = React.useCallback((s: string) => s, []);
+  const [preloadError, setPreloadError] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (project.rawCsvText) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/default.csv", { cache: "no-store" });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const text = await res.text();
+        if (cancelled) return;
+        loadCsv("default.csv", text);
+      } catch (e) {
+        if (cancelled) return;
+        setPreloadError(e instanceof Error ? e.message : "Kon de standaard CSV niet laden.");
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [loadCsv, project.rawCsvText]);
 
   return (
     <AppShell
@@ -121,6 +142,11 @@ export default function Home() {
             <p className="text-[15px] leading-7 text-[var(--muted)]">
               Upload een CSV-export van je COMTOO UX survey — alles blijft lokaal in je browser.
             </p>
+            {preloadError ? (
+              <div className="rounded-[12px] bg-amber-50 px-4 py-3 text-[13px] text-amber-900">
+                Kon de standaard CSV niet automatisch laden. Je kunt nog steeds handmatig uploaden.
+              </div>
+            ) : null}
             <div className="pt-2">
               <CsvUploader
                 config={project.parseConfig}
