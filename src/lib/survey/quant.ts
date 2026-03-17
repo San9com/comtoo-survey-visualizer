@@ -58,13 +58,19 @@ export function computeQuant(question: Question, rows: Record<string, string>[])
       ? question.columns.filter((c) => Boolean(c.optionLabel))
       : question.columns;
 
+    const fallbackColumns = question.columns.filter((c) => !c.optionLabel);
+
     // Each option column counts independently. A selection is any non-empty cell.
+    // If a row has no explicit option selected, fall back to parsing combined-answer cells.
     for (const row of rows) {
+      let rowHadExplicitSelection = false;
+
       for (const col of effectiveColumns) {
         const raw = normalizeAnswer(row[col.key] ?? "");
         if (!raw) continue;
         if (col.optionLabel) {
           counts.set(col.optionLabel, (counts.get(col.optionLabel) ?? 0) + 1);
+          rowHadExplicitSelection = true;
           continue;
         }
 
@@ -77,6 +83,17 @@ export function computeQuant(question: Question, rows: Record<string, string>[])
         }
 
         counts.set(raw, (counts.get(raw) ?? 0) + 1);
+      }
+
+      if (!rowHadExplicitSelection && fallbackColumns.length) {
+        for (const col of fallbackColumns) {
+          const raw = normalizeAnswer(row[col.key] ?? "");
+          if (!raw) continue;
+          const values = /[,;]/.test(raw) ? splitMulti(raw) : [raw];
+          for (const part of new Set(values)) {
+            counts.set(part, (counts.get(part) ?? 0) + 1);
+          }
+        }
       }
     }
   } else {

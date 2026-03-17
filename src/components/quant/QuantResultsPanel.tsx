@@ -56,7 +56,7 @@ export function QuantResultsPanel({
           </div>
           {fullData.length > maxBars ? (
             <div className="mt-2 text-[12.5px] text-[var(--muted)]">
-              We tonen top {maxBars} + "Overig" voor leesbaarheid.
+              We tonen top {maxBars} + &ldquo;Overig&rdquo; voor leesbaarheid.
             </div>
           ) : null}
           <div className="mt-2 text-[12.5px] text-[var(--muted)]">

@@ -73,14 +73,14 @@ function guessTypeFromValues(values: string[], isGroupedCheckbox: boolean): Ques
 }
 
 export function detectQuestions(headers: string[], rows: Record<string, string>[]): Question[] {
-  const cleaned = headers.map(normalizeHeader).filter(Boolean);
-
   const groups = new Map<
     string,
     { label: string; columns: Array<{ key: string; optionLabel?: string }>; isMetadata: boolean }
   >();
 
-  for (const original of cleaned) {
+  for (const originalRaw of headers) {
+    const original = (originalRaw ?? "").trim();
+    if (!original) continue;
     const { base, option } = splitCheckboxHeader(original);
     const label = base || original;
     const isMetadata = METADATA_HEADERS.has(label);
@@ -89,6 +89,8 @@ export function detectQuestions(headers: string[], rows: Record<string, string>[
       columns: [],
       isMetadata,
     };
+    // IMPORTANT: keep the *original* header string as the lookup key for row objects.
+    // PapaParse preserves embedded newlines in header fields, so normalizing would break lookup.
     g.columns.push({ key: original, optionLabel: option ?? undefined });
     groups.set(label, g);
   }

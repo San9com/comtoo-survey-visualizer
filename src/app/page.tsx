@@ -56,17 +56,8 @@ export default function Home() {
 
             <div className="rounded-[16px] bg-[var(--bg)] p-3">
               {!project.rows.length ? (
-                <div className="space-y-3">
-                  <div className="text-[13px] text-[var(--muted)]">
-                    Upload een survey CSV om te beginnen.
-                  </div>
-                  <CsvUploader
-                    config={project.parseConfig}
-                    onLoaded={({ name, text }) => {
-                      loadCsv(name, text);
-                      setView("work");
-                    }}
-                  />
+                <div className="text-[13px] text-[var(--muted)]">
+                  Upload een survey CSV in het hoofdvenster om te beginnen.
                 </div>
               ) : (
                 <div className="max-h-[calc(100vh-340px)] overflow-auto pr-1">
@@ -109,7 +100,7 @@ export default function Home() {
           </div>
 
           <div className="flex items-center gap-2">
-            <div className="hidden sm:block">
+            {project.rawCsvText ? (
               <CsvUploader
                 config={project.parseConfig}
                 compact
@@ -118,7 +109,7 @@ export default function Home() {
                   setView("work");
                 }}
               />
-            </div>
+            ) : null}
             <Button variant="ghost" onClick={reset}>
               Reset
             </Button>
